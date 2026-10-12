@@ -1,0 +1,19 @@
+# GDPR Art. 33 personal data breach notification (Finland: Office of the Data
+# Protection Ombudsman). VERIFY against the authority's form.
+id: gdpr
+name: "GDPR — personal data breach"
+authority: "Office of the Data Protection Ombudsman"
+applies_when_flag: personal_data_breach
+corpus_tags: [gdpr]
+deadlines:
+  - stage: notification
+    label: "Breach notification"
+    anchor: detected
+    hours: 72
+report_templates:
+  notification:
+    - {key: controller, label: "Controller", source: "org.name"}
+    - {key: nature, label: "Nature of the breach, categories and approximate numbers", source: "llm"}
+    - {key: consequences, label: "Likely consequences", source: "llm"}
+    - {key: measures, label: "Measures taken or proposed", source: "llm"}
+    - {key: dpo, label: "Data protection contact", source: "org.contact"}

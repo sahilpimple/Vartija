@@ -1,0 +1,14 @@
+id: telecom
+name: "Telecommunications operator"
+entity_class: essential
+regimes: [nis2_fi, gdpr]
+supervisor: "Traficom"
+org:
+  name: "Demo Telecom Oy"
+  contact: "CISO, security@demo-telecom.example"
+  markets: [FI]
+# Heuristic signals the rule-based assessor uses; the LLM sees them as hints.
+significance_hints:
+  users_affected_threshold: 1000
+  outage_minutes_threshold: 60
+  keywords: [ddos, outage, bgp, customer accounts, core network, ransomware]

@@ -1,0 +1,19 @@
+# Add Vartija next to CyberGRC-AI's existing compose stack:
+#   docker compose -f docker-compose.yml -f docker-compose.vartija.yml up --build
+# It reuses CyberGRC-AI's PostgreSQL (own vartija_* tables) and its Ollama service if present.
+# Rename "postgres" / "ollama" below to match the service names in your docker-compose.yml.
+services:
+  vartija:
+    build: ./vartija-core
+    environment:
+      VARTIJA_DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-grc}:${POSTGRES_PASSWORD:-grc}@postgres:5432/${POSTGRES_DB:-grc}
+      VARTIJA_EVENT_SECRET: ${VARTIJA_EVENT_SECRET:?set VARTIJA_EVENT_SECRET in .env}
+      VARTIJA_SECTOR: ${VARTIJA_SECTOR:-telecom}
+      VARTIJA_LLM: ${VARTIJA_LLM:-rules}
+      VARTIJA_LLM_BASE_URL: ${VARTIJA_LLM_BASE_URL:-http://ollama:11434}
+      VARTIJA_LLM_MODEL: ${VARTIJA_LLM_MODEL:-llama3.1}
+      VARTIJA_LLM_API_KEY: ${VARTIJA_LLM_API_KEY:-}
+    depends_on:
+      - postgres
+    ports:
+      - "8001:8001"

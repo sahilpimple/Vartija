@@ -1,0 +1,14 @@
+id: maritime
+name: "Shipbuilding / maritime systems"
+entity_class: important
+regimes: [nis2_fi, cra, gdpr]
+supervisor: "Traficom"
+# For new ships, also check IACS UR E26/E27 cyber resilience rules (verify scope).
+org:
+  name: "Demo Shipyard Oy"
+  contact: "Product security, psirt@demo-shipyard.example"
+  markets: [FI, SE, DE, NO, IT]
+significance_hints:
+  users_affected_threshold: 1
+  outage_minutes_threshold: 30
+  keywords: [navigation, bridge system, ecdis, propulsion, ot network, exploited, vessel]

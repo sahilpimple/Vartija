@@ -1,0 +1,13 @@
+id: energy
+name: "Energy utility"
+entity_class: essential
+regimes: [nis2_fi, gdpr]
+supervisor: "Energy Authority (Energiavirasto), coordinated by Traficom"
+org:
+  name: "Demo Energia Oy"
+  contact: "CISO, security@demo-energia.example"
+  markets: [FI]
+significance_hints:
+  users_affected_threshold: 500
+  outage_minutes_threshold: 15
+  keywords: [scada, plc, substation, district heating, ot network, safety system, ransomware]

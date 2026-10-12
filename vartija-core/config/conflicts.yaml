@@ -1,0 +1,24 @@
+# Known tensions between actions or obligations. The detector surfaces these;
+# it never resolves them. A human decides and the decision is audited.
+conflicts:
+  - id: contain_vs_evidence
+    when_all: [contain_host]
+    unless_any: [preserve_evidence]
+    title: "Containment may destroy volatile evidence"
+    detail: "Isolating or rebooting the host can erase memory and live network state needed for the investigation and the final report."
+    suggestion: "Capture memory and network state first, or record an explicit decision to skip it."
+  - id: block_vs_monitor
+    when_all: [block_ip_range]
+    title: "Blocking ends visibility into the attacker"
+    detail: "Blocking stops the attack but also stops observation of the attacker's infrastructure and techniques."
+    suggestion: "Decide how long to monitor before blocking; record who accepted the risk."
+  - id: notify_vs_investigation
+    when_all: [notify_customers]
+    title: "Early customer notice may tip off the attacker or a legal investigation"
+    detail: "Public or customer notification can conflict with law-enforcement requests or an ongoing investigation."
+    suggestion: "Check with legal and the police liaison before notifying."
+  - id: dual_clock
+    when_flags_all: [nis2_significant, personal_data_breach]
+    title: "Two regulators, two clocks"
+    detail: "The NIS2 early warning (24 h) and the GDPR breach notification (72 h) go to different authorities with different content."
+    suggestion: "Draft both from the same evidence so the facts stay consistent."

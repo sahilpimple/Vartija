@@ -1,0 +1,40 @@
+# NIS2 as implemented in Finland (Cybersecurity Act 124/2025, in force 8 April 2025).
+# VERIFY every field against the official Traficom / NCSC-FI guidance and reporting
+# form before showing it to a challenge company. Field lists are paraphrased.
+id: nis2_fi
+name: "NIS2 — Finnish Cybersecurity Act"
+authority: "Sector supervisor via Traficom / NCSC-FI"
+applies_when_flag: nis2_significant
+corpus_tags: [nis2]
+deadlines:
+  - stage: early_warning
+    label: "Early warning"
+    anchor: detected
+    hours: 24
+  - stage: notification
+    label: "Incident notification"
+    anchor: detected
+    hours: 72
+  - stage: final_report
+    label: "Final report"
+    anchor: notification       # one month after the incident notification was sent
+    hours: 720
+report_templates:
+  early_warning:
+    - {key: entity_name, label: "Reporting entity", source: "org.name"}
+    - {key: contact, label: "Contact person", source: "org.contact"}
+    - {key: detected_at, label: "When the incident was detected", source: "case.detected_at"}
+    - {key: summary, label: "Short description", source: "llm", hint: "2-3 sentences, factual, no speculation"}
+    - {key: malicious, label: "Suspected unlawful or malicious act?", source: "llm", hint: "yes / no / unknown, with one-line reason"}
+    - {key: cross_border, label: "Possible cross-border impact?", source: "llm", hint: "yes / no / unknown, with one-line reason"}
+  notification:
+    - {key: entity_name, label: "Reporting entity", source: "org.name"}
+    - {key: update, label: "Update to the early warning", source: "llm"}
+    - {key: severity_impact, label: "Initial assessment of severity and impact", source: "llm"}
+    - {key: iocs, label: "Indicators of compromise", source: "events.iocs"}
+    - {key: affected_services, label: "Affected services", source: "grc.asset"}
+  final_report:
+    - {key: description, label: "Detailed description", source: "llm"}
+    - {key: root_cause, label: "Type of threat or root cause", source: "llm"}
+    - {key: mitigation, label: "Mitigation measures applied and ongoing", source: "llm"}
+    - {key: cross_border, label: "Cross-border impact", source: "llm"}

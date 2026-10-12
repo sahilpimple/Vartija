@@ -1,0 +1,13 @@
+id: industrial
+name: "Industrial automation manufacturer"
+entity_class: important
+regimes: [cra, nis2_fi, gdpr]
+supervisor: "Traficom (NIS2); ENISA SRP (CRA)"
+org:
+  name: "Demo Automation Oyj"
+  contact: "PSIRT, psirt@demo-automation.example"
+  markets: [FI, SE, DE, FR, PL]
+significance_hints:
+  users_affected_threshold: 10
+  outage_minutes_threshold: 60
+  keywords: [plc, firmware, controller, cve, exploited, iec 62443, sbom]

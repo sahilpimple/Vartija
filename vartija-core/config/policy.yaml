@@ -1,0 +1,23 @@
+# Which actions need human approval, and from which roles.
+# An AI actor can REQUEST any action but can never APPROVE one.
+# "any_of": one approval from any listed role is enough.
+# "all_of": one approval from EACH listed role is needed.
+actions:
+  add_note:
+    approval: none
+  open_corrective_action:
+    approval: none
+  submit_report:
+    approval: {all_of: [ciso, management]}
+  contain_host:
+    approval: {any_of: [ciso, soc_lead]}
+  block_ip_range:
+    approval: {any_of: [ciso, soc_lead]}
+  preserve_evidence:
+    approval: none
+  notify_customers:
+    approval: {all_of: [management, legal]}
+  rotate_credentials:
+    approval: {any_of: [ciso, it_admin]}
+# Anything not listed above is refused. Fail closed.
+default: refuse

@@ -1,0 +1,48 @@
+# Demo governance data. Replace with the challenge company's (anonymised) data, or
+# switch to a provider that reads CyberGRC-AI directly (see vartija_core/grc.py).
+assets:
+  web-portal-01:
+    name: "Customer self-service portal"
+    service: "Customer accounts and billing"
+    criticality: high
+    owner: {name: "Aino Virtanen", role: ciso, contact: "aino.virtanen@demo.example"}
+  core-dns-02:
+    name: "Core DNS resolver cluster"
+    service: "Name resolution for mobile and fixed broadband"
+    criticality: critical
+    owner: {name: "Mikko Laine", role: soc_lead, contact: "mikko.laine@demo.example"}
+  plc-line-3:
+    name: "Line 3 PLC controller (firmware 4.2)"
+    service: "Production line control; also sold as product DA-PLC-4"
+    criticality: critical
+    owner: {name: "Sanna Koski", role: ciso, contact: "sanna.koski@demo.example"}
+risks:
+  - id: R-012
+    title: "Account takeover via credential stuffing"
+    assets: [web-portal-01]
+    inherent: high
+    residual: medium
+    controls: [A.5.17, A.8.5, A.8.16]
+  - id: R-031
+    title: "DNS service outage from volumetric attack"
+    assets: [core-dns-02]
+    inherent: critical
+    residual: high
+    controls: [A.8.20, A.5.30]
+  - id: R-044
+    title: "Remote exploitation of controller firmware"
+    assets: [plc-line-3]
+    inherent: critical
+    residual: high
+    controls: [A.8.8, A.8.9, A.5.24]
+controls:
+  - {id: A.5.17, title: "Authentication information"}
+  - {id: A.5.24, title: "Incident management planning and preparation"}
+  - {id: A.5.30, title: "ICT readiness for business continuity"}
+  - {id: A.8.5, title: "Secure authentication"}
+  - {id: A.8.8, title: "Management of technical vulnerabilities"}
+  - {id: A.8.9, title: "Configuration management"}
+  - {id: A.8.16, title: "Monitoring activities"}
+  - {id: A.8.20, title: "Networks security"}
+findings:
+  - {id: F-2026-07, asset: web-portal-01, title: "MFA not enforced for legacy accounts", status: open}

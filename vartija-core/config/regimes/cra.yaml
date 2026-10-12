@@ -1,0 +1,37 @@
+# EU Cyber Resilience Act, Article 14 (reporting applies from 11 September 2026).
+# Reports go through ENISA's Single Reporting Platform (SRP). VERIFY field lists
+# against ENISA's SRP guidance; they are paraphrased here.
+id: cra
+name: "Cyber Resilience Act — Art. 14"
+authority: "Coordinator CSIRT + ENISA via the Single Reporting Platform"
+applies_when_flag: cra_reportable
+corpus_tags: [cra]
+deadlines:
+  - stage: early_warning
+    label: "Early warning"
+    anchor: detected
+    hours: 24
+  - stage: notification
+    label: "Vulnerability / incident notification"
+    anchor: detected
+    hours: 72
+  - stage: final_report
+    label: "Final report"
+    anchor: corrective_measure   # exploited vulnerability: 14 days after a fix is available
+    hours: 336
+report_templates:
+  early_warning:
+    - {key: manufacturer, label: "Manufacturer", source: "org.name"}
+    - {key: product, label: "Affected product with digital elements", source: "grc.asset"}
+    - {key: member_states, label: "Member States where the product is available", source: "org.markets"}
+    - {key: summary, label: "What is being exploited", source: "llm"}
+  notification:
+    - {key: product, label: "Affected product", source: "grc.asset"}
+    - {key: nature, label: "Nature of the exploit and the vulnerability", source: "llm"}
+    - {key: measures, label: "Corrective or mitigating measures taken", source: "llm"}
+    - {key: user_measures, label: "Measures users can take", source: "llm"}
+    - {key: sensitivity, label: "How sensitive the notified information is", source: "llm"}
+  final_report:
+    - {key: description, label: "Vulnerability description, severity and impact", source: "llm"}
+    - {key: actor, label: "Information on any malicious actor, if known", source: "llm"}
+    - {key: fix, label: "Security update or corrective measure released", source: "llm"}
