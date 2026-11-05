@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vartija dashboard</title>
+<style>
+:root{--bg:#f6f5f1;--card:#fff;--ink:#1f1e1b;--muted:#6b6a64;--line:#e3e1d9;--accent:#2f5fb3;--ok:#2e7d32;--warn:#b26a00;--bad:#c62828;--chip:#eef2fb;--r:10px}
+*{box-sizing:border-box}body{margin:0;font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink)}
+header{display:flex;align-items:center;gap:16px;padding:12px 20px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:2}
+header h1{font-size:17px;margin:0;font-weight:600}header .meta{color:var(--muted);font-size:12px}
+header .spacer{flex:1}select,input,button{font:inherit}
+button{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:6px 12px;cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}button.danger{color:var(--bad)}
+button:disabled{opacity:.5;cursor:default}select,input[type=text],input[type=password]{border:1px solid var(--line);border-radius:8px;padding:6px 8px;background:var(--card)}
+main{display:grid;grid-template-columns:280px 1fr;gap:16px;padding:16px 20px;max-width:1400px;margin:0 auto}
+@media(max-width:860px){main{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;margin-bottom:16px}
+.card h2{font-size:14px;margin:0 0 10px;font-weight:600;display:flex;align-items:center;gap:8px}
+.card h2 .right{margin-left:auto;display:flex;gap:6px}
+.case{padding:10px;border-radius:8px;cursor:pointer;border:1px solid transparent}.case:hover{background:var(--bg)}
+.case.sel{border-color:var(--accent);background:var(--chip)}.case .t{font-weight:500}.case .s{color:var(--muted);font-size:12px}
+.pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:12px;background:var(--bg);border:1px solid var(--line)}
+.pill.ok{color:var(--ok);border-color:#b9dcbb;background:#eef7ee}.pill.warn{color:var(--warn);border-color:#f0d29a;background:#fdf5e6}
+.pill.bad{color:var(--bad);border-color:#f1b9b9;background:#fdeeee}.pill.info{color:var(--accent);border-color:#c5d3ef;background:var(--chip)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:1100px){.grid2{grid-template-columns:1fr}}
+.regime{border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:8px}
+.regime .h{display:flex;gap:8px;align-items:center;margin-bottom:6px}.regime .h b{font-weight:600}
+.stage{display:flex;align-items:center;gap:10px;padding:4px 0;border-top:1px dashed var(--line)}
+.stage .lbl{flex:1}.stage .cd{font-variant-numeric:tabular-nums;font-weight:600;min-width:90px;text-align:right}
+.big{font-size:28px;font-weight:600;font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}.small{font-size:12px}
+.cite{display:inline-block;margin:2px 4px 2px 0;padding:2px 8px;border-radius:6px;background:var(--chip);color:var(--accent);font-size:12px}
+.cite.bad{background:#fdeeee;color:var(--bad);text-decoration:line-through}
+table{width:100%;border-collapse:collapse}td,th{text-align:left;padding:6px 4px;border-top:1px solid var(--line);vertical-align:top}
+th{font-weight:500;color:var(--muted);font-size:12px;border-top:0}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.chain{font-family:ui-monospace,Consolas,monospace;font-size:12px;word-break:break-all}
+.empty{color:var(--muted);text-align:center;padding:30px}
+#toast{position:fixed;bottom:16px;right:16px;max-width:420px;background:var(--ink);color:#fff;padding:10px 14px;border-radius:8px;display:none;z-index:9}
+#toast.err{background:var(--bad)}
+.conflict{border-left:3px solid var(--warn);padding:6px 10px;background:#fdf8ee;margin:6px 0}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}.seg button{border:0;border-radius:0}
+.seg button.on{background:var(--ink);color:#fff}
+#exec{max-width:1100px;margin:0 auto;padding:20px}
+.banner{display:flex;gap:14px;align-items:center;padding:18px 20px;border-radius:12px;margin-bottom:18px}
+.banner .dot{width:16px;height:16px;border-radius:50%;flex:none}
+.banner.green{background:#eef7ee}.banner.green .dot{background:var(--ok)}
+.banner.amber{background:#fdf5e6}.banner.amber .dot{background:var(--warn)}
+.banner.red{background:#fdeeee}.banner.red .dot{background:var(--bad)}
+.banner .h{font-size:20px;font-weight:600}.banner .s{color:var(--muted)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:18px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
+.kpi .l{color:var(--muted);font-size:13px}.kpi .v{font-size:30px;font-weight:600;margin:2px 0}.kpi .n{color:var(--muted);font-size:12px}
+.risk{display:flex;gap:12px;padding:10px 0;border-top:1px solid var(--line)}.risk:first-child{border-top:0}
+.risk .b{width:10px;height:10px;border-radius:50%;margin-top:6px;flex:none}.risk .b.red{background:var(--bad)}.risk .b.amber{background:var(--warn)}
+.assume{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}.assume label{font-size:12px;color:var(--muted);display:block}
+.assume input{width:100%}
+</style>
+</head>
+<body>
+<header>
+  <h1>Vartija</h1>
+  <span class="meta" id="health">connecting…</span>
+  <span class="seg" id="views" style="display:none"><button data-view="exec">Executive view</button><button data-view="eng">Engineer view</button></span>
+  <span class="spacer"></span>
+  <label class="small muted" for="who">Acting as</label>
+  <select id="who" aria-label="Acting as"></select>
+  <input type="password" id="token" placeholder="Bearer token" style="display:none;width:200px" aria-label="Bearer token">
+</header>
+<section id="exec" style="display:none"></section>
+<div id="noaccess" class="card empty" style="display:none;max-width:600px;margin:40px auto">Your role has no access to either view.</div>
+<main id="eng">
+  <section>
+    <div class="card">
+      <h2>Cases <span class="right"><button id="seed" class="primary" title="Create a sample incident (demo mode)">Load demo incident</button></span></h2>
+      <div id="cases"><div class="empty">No cases yet</div></div>
+    </div>
+    <div class="card">
+      <h2>Sources</h2>
+      <div class="small muted" style="margin-bottom:8px">Add the challenge's rules, standards or data pack. Documents become citable paragraphs straight away.</div>
+      <input type="file" id="srcfile" multiple accept=".pdf,.md,.txt,.html,.htm,.csv,.xlsx,.xls,.json,.yaml,.yml,.zip,.docx,.pptx,.xml,.png,.jpg,.jpeg,.dxf,.ifc,.step,.stp" style="width:100%;margin-bottom:6px" aria-label="Choose files">
+      <details class="small" style="margin-bottom:6px"><summary class="muted">Options</summary>
+        <label class="muted" for="srcprefix">Citation prefix (optional, one file at a time)</label>
+        <input type="text" id="srcprefix" placeholder="solas-ii-2" style="width:100%;margin:2px 0 6px">
+        <label class="muted" for="srchead">Extra heading pattern (regex with (?P&lt;num&gt;…))</label>
+        <input type="text" id="srchead" placeholder="^Rule (?P&lt;num&gt;\d+(?:\.\d+)*)\s+(?P&lt;title&gt;.*)$" style="width:100%;margin-top:2px">
+      </details>
+      <button id="srcup" class="primary" style="width:100%">Upload</button>
+      <div id="srcmsg" class="small" style="margin-top:6px"></div>
+      <div id="srclist" class="small" style="margin-top:8px"></div>
+    </div>
+    <div class="card">
+      <h2>Audit chain</h2>
+      <div id="chain" class="small muted">Not checked yet</div>
+      <div class="row" style="margin-top:8px"><button id="verify">Verify whole chain</button></div>
+    </div>
+  </section>
+  <section id="detail"><div class="card empty">Select a case, or load the demo incident.</div></section>
+</main>
+<div id="toast" role="status"></div>
+<script>
+const PEOPLE = [
+  {label:"Aino · CISO", user:"aino", roles:"ciso", kind:"human"},
+  {label:"Pekka · Management", user:"pekka", roles:"management", kind:"human"},
+  {label:"Mikko · SOC lead", user:"mikko", roles:"soc_lead", kind:"human"},
+  {label:"Liisa · Legal", user:"liisa", roles:"legal", kind:"human"},
+  {label:"Sanna · CEO", user:"sanna", roles:"ceo,management", kind:"human"},
+  {label:"Ella · Admin (both views)", user:"ella", roles:"admin,ciso,management", kind:"human"},
+  {label:"Vartija agent · AI", user:"vartija-agent", roles:"ciso,management", kind:"ai"},
+];
+const store = {get(k){try{return localStorage.getItem(k)}catch(e){return null}}, set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let H = {}, selected = null, clockData = null, authMode = "headers";
+
+PEOPLE.forEach((p,i) => $("#who").insertAdjacentHTML("beforeend", `<option value="${i}">${esc(p.label)}</option>`));
+$("#who").value = store.get("vartija.who") || "0";
+$("#token").value = store.get("vartija.token") || "";
+let views = [], view = store.get("vartija.view") || "exec", summary = null, assumeVals = {};
+$("#who").onchange = guard(async () => { store.set("vartija.who", $("#who").value); await start(); });
+$("#token").onchange = guard(async () => { store.set("vartija.token", $("#token").value); await start(); });
+document.querySelectorAll("#views button").forEach(b => b.onclick = guard(() => { view = b.dataset.view; store.set("vartija.view", view); show(); }));
+
+function me(){ return PEOPLE[+$("#who").value] }
+function headers(){
+  if (authMode === "jwt") return {"Authorization": "Bearer " + $("#token").value.trim()};
+  const p = me(); return {"X-User": p.user, "X-Roles": p.roles, "X-User-Kind": p.kind};
+}
+async function api(path, opts = {}){
+  const r = await fetch(path, {...opts, headers: {"Content-Type":"application/json", ...headers(), ...(opts.headers||{})},
+                               body: opts.body ? JSON.stringify(opts.body) : undefined});
+  const text = await r.text(); let data; try { data = JSON.parse(text) } catch(e){ data = text }
+  if (!r.ok) throw new Error((data && data.detail) ? (typeof data.detail === "string" ? data.detail : JSON.stringify(data.detail)) : `HTTP ${r.status}`);
+  return data;
+}
+function toast(msg, err){ const t = $("#toast"); t.textContent = msg; t.className = err ? "err" : ""; t.style.display = "block";
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.style.display = "none", err ? 6000 : 3000); }
+function guard(fn){ return async (...a) => { try { await fn(...a) } catch(e){ toast(e.message, true) } } }
+function fmt(s){ if (s == null) return "–"; const neg = s < 0; s = Math.abs(Math.floor(s));
+  const d = Math.floor(s/86400), h = Math.floor(s%86400/3600), m = Math.floor(s%3600/60), x = s%60;
+  const core = (d ? d+"d " : "") + String(h).padStart(2,"0")+":"+String(m).padStart(2,"0")+":"+String(x).padStart(2,"0");
+  return neg ? "−"+core : core; }
+const STATUS = {running:"info", due_soon:"warn", overdue:"bad", done:"ok", done_late:"warn", waiting:"", not_applicable:""};
+const when = iso => iso ? new Date(iso).toLocaleString() : "–";
+
+async function loadHealth(){
+  const h = await api("/health"); authMode = h.auth;
+  $("#token").style.display = authMode === "jwt" ? "" : "none"; $("#who").style.display = authMode === "jwt" ? "none" : "";
+  $("#health").textContent = `sector ${h.sector} · AI ${h.llm} · ${h.retriever} · ${h.corpus_chunks} passages · ${h.embeddings}`;
+  $("#seed").style.display = h.demo ? "" : "none";
+}
+async function loadCases(){
+  const cs = await api("/cases");
+  $("#cases").innerHTML = cs.length ? cs.map(c => `<div class="case ${c.id===selected?"sel":""}" data-id="${esc(c.id)}">
+      <div class="t">${esc(c.title)}</div>
+      <div class="s">${esc(c.status)} · ${when(c.detected_at)}</div></div>`).join("") : `<div class="empty">No cases yet</div>`;
+  document.querySelectorAll(".case").forEach(el => el.onclick = guard(() => openCase(el.dataset.id)));
+}
+
+async function openCase(id){
+  selected = id; loadCases().catch(()=>{});
+  const [c, clock, actions] = await Promise.all([api(`/cases/${id}`), api(`/cases/${id}/clock`), api(`/cases/${id}/actions`)]);
+  clockData = clock; render(c, clock, actions);
+}
+
+function voteRole(r){
+  const mine = me().roles.split(","), done = new Set(r.votes.filter(v => v.decision === "approve").map(v => v.role));
+  return (r.required_roles || []).find(x => mine.includes(x) && !done.has(x)) || (r.required_roles || []).find(x => mine.includes(x)) || mine[0];
+}
+function render(c, clock, actions){
+  const a = c.latest_assessment, nd = clock.next_due, p = me();
+  const grc = c.grc || {};
+  $("#detail").innerHTML = `
+  <div class="card">
+    <h2>${esc(c.title)} <span class="pill">${esc(c.status)}</span>
+      <span class="right"><button id="pdf" class="primary">Export PDF</button><button id="exp">JSON</button></span></h2>
+    <div class="row small muted">Asset <b>${esc(c.asset_id || "–")}</b> · owner ${esc(grc.owner?.name || grc.owner || "–")} ·
+      detected ${when(c.detected_at)} · ${c.events.length} event(s)</div>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <h2>Regulatory clock</h2>
+      ${nd ? `<div class="muted small">Next due: ${esc(nd.label)} (${esc(nd.regime)})</div>
+              <div class="big" id="nextcd" data-due="${esc(nd.due_at)}">–</div>` :
+             `<div class="muted">${clock.undetermined ? "Duties not confirmed yet. Clocks still run from detection." : "Nothing due."}</div>`}
+      <div style="margin-top:10px">${clock.regimes.map(r => `<div class="regime">
+        <div class="h"><b>${esc(r.name)}</b><span class="small muted">${esc(r.authority)}</span>
+          <span class="pill ${r.applies===true?"bad":r.applies===false?"":"warn"}">${r.applies===true?"applies":r.applies===false?"not applicable":"undecided"}</span></div>
+        ${r.stages.map(s => `<div class="stage"><span class="lbl">${esc(s.label)}</span>
+          <span class="pill ${STATUS[s.status]||""}">${esc(s.status.replace("_"," "))}</span>
+          <span class="cd" data-due="${esc(s.due_at||"")}" data-done="${s.completed_at?1:0}">${s.completed_at?"done":fmt(s.seconds_remaining)}</span></div>`).join("")}
+      </div>`).join("")}</div>
+    </div>
+    <div class="card">
+      <h2>AI assessment <span class="right"><button id="assess" class="primary">${a ? "Re-assess" : "Assess"}</button></span></h2>
+      ${a ? `
+        <div class="row" style="margin-bottom:8px">${Object.entries(a.flags).map(([k,v]) =>
+          `<span class="pill ${v?"bad":""}">${esc(k.replace(/_/g," "))}: ${v?"yes":"no"}</span>`).join("")}
+          <span class="pill">confidence ${Math.round(a.confidence*100)}%</span>
+          ${a.needs_human_review ? `<span class="pill warn">needs human review</span>` : ""}</div>
+        <div>${esc(a.rationale)}</div>
+        <div style="margin-top:8px"><span class="small muted">Citations </span>
+          ${a.citations.map(x => `<span class="cite" title="verified against retrieved text">${esc(x)}</span>`).join("") || "<span class='small muted'>none</span>"}
+          ${a.rejected_citations.map(x => `<span class="cite bad" title="rejected: not in retrieved context">${esc(x)}</span>`).join("")}</div>
+        ${a.conflicts.map(k => `<div class="conflict"><b>${esc(k.title||k.id)}</b><div class="small">${esc(k.detail||"")}</div>
+          ${k.suggestion?`<div class="small muted">Suggestion: ${esc(k.suggestion)}</div>`:""}</div>`).join("")}
+        <div class="small muted" style="margin-top:6px">Engine ${esc(a.engine)} · prompt ${esc(a.prompt_version)} · ${when(a.created_at)}</div>
+        <div class="row" style="margin-top:10px">
+          <button id="confirm" ${p.kind!=="human"?"disabled title='Only a human can confirm duties'":""}>Confirm these duties</button>
+          <span class="small muted">A person decides which reporting duties apply.</span></div>`
+      : `<div class="muted">Not assessed yet. The AI proposes; a person confirms.</div>`}
+    </div>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <h2>Actions and approvals</h2>
+      <div class="row" style="margin-bottom:10px">
+        <select id="act">${(a?.recommended_actions?.length ? a.recommended_actions : []).concat(
+          ["open_corrective_action","preserve_evidence","contain_host","block_ip_range","rotate_credentials","notify_customers","add_note"])
+          .filter((v,i,arr)=>arr.indexOf(v)===i).map(x=>`<option>${esc(x)}</option>`).join("")}
+          ${nd ? `<option value="__report">submit_report (${esc(nd.regime)} ${esc(nd.stage||"")})</option>` : ""}</select>
+        <button id="req">Request</button></div>
+      ${actions.length ? `<table><tr><th>Action</th><th>Status</th><th>Needs</th><th></th></tr>
+        ${actions.map(r => `<tr><td>${esc(r.action)}<div class="small muted">by ${esc(r.requested_by)}${r.requested_by_kind==="ai"?" (AI)":""}</div></td>
+          <td><span class="pill ${r.status==="approved"||r.status==="executed"?"ok":r.status==="rejected"?"bad":"warn"}">${esc(r.status)}</span>
+            ${r.votes.map(v=>`<div class="small muted">${esc(v.approver)} (${esc(v.role)}): ${esc(v.decision)}</div>`).join("")}</td>
+          <td class="small">${esc((r.required_roles||[]).join(", ") || "none")}</td>
+          <td class="row">${r.status==="pending_approval" ? `<button data-dec="approve" data-id="${esc(r.id)}" data-role="${esc(voteRole(r))}">Approve</button>
+              <button class="danger" data-dec="reject" data-id="${esc(r.id)}" data-role="${esc(voteRole(r))}">Reject</button>` : ""}
+            ${r.status==="approved" ? `<button class="primary" data-exec="${esc(r.id)}">Execute</button>` : ""}</td></tr>`).join("")}</table>`
+        : `<div class="muted small">No actions requested.</div>`}
+      <div class="small muted" style="margin-top:8px">Acting as ${esc(p.label)}. AI can request but never approve; nobody approves their own request.</div>
+    </div>
+    <div class="card">
+      <h2>Report draft <span class="right">${nd ? `<button id="draft">Draft ${esc(nd.regime)} ${esc(nd.stage||"")}</button>` : ""}</span></h2>
+      <div id="report" class="muted small">${nd ? "Draft the next report due. Every field links to evidence." : "No report due."}</div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Events and audit trail <span class="right"><button id="aud">Show audit trail</button></span></h2>
+    <table><tr><th>When</th><th>Type</th><th>Severity</th><th>Summary</th></tr>
+      ${c.events.map(e => `<tr><td class="small">${when(e.occurred_at)}</td><td>${esc(e.type)}</td>
+        <td><span class="pill ${e.severity==="critical"||e.severity==="high"?"bad":e.severity==="medium"?"warn":""}">${esc(e.severity)}</span>
+          <span class="small muted">conf ${Math.round(e.confidence*100)}%</span></td><td>${esc(e.summary)}</td></tr>`).join("")}</table>
+    <div id="audit"></div>
+  </div>`;
+
+  const id = c.id;
+  $("#assess").onclick = guard(async () => { await api(`/cases/${id}/assess`, {method:"POST", body:{apply_flags:false}}); toast("Assessment created"); openCase(id); });
+  if ($("#confirm")) $("#confirm").onclick = guard(async () => {
+    await api(`/cases/${id}/flags`, {method:"POST", body:{flags:a.flags, reason:`confirmed in dashboard by ${me().user}`}}); toast("Duties confirmed"); openCase(id); });
+  $("#req").onclick = guard(async () => {
+    let action = $("#act").value, params = {title: "Follow-up from " + c.title};
+    if (action === "__report") {
+      const d = await api(`/cases/${id}/reports`, {method:"POST", body:{regime:nd.regime, stage:nd.stage}});
+      action = "submit_report"; params = {regime: nd.regime, stage: nd.stage, draft_id: d.draft_id};
+    }
+    const r = await api(`/cases/${id}/actions`, {method:"POST", body:{action, params, rationale:"requested in dashboard"}});
+    toast(`${r.action}: ${r.status}`); openCase(id); });
+  document.querySelectorAll("[data-dec]").forEach(b => b.onclick = guard(async () => {
+    const role = b.dataset.role;
+    await api(`/actions/${b.dataset.id}/decide`, {method:"POST", body:{decision:b.dataset.dec, role}}); toast(`${b.dataset.dec}d as ${role}`); openCase(id); }));
+  document.querySelectorAll("[data-exec]").forEach(b => b.onclick = guard(async () => {
+    await api(`/actions/${b.dataset.exec}/execute`, {method:"POST"}); toast("Executed"); openCase(id); }));
+  if ($("#draft")) $("#draft").onclick = guard(async () => {
+    const d = await api(`/cases/${id}/reports`, {method:"POST", body:{regime:nd.regime, stage:nd.stage}});
+    $("#report").className = ""; $("#report").innerHTML = `<div class="row small" style="margin-bottom:6px">
+      <span class="pill">${esc(d.authority)}</span><span class="pill ${d.completeness===1?"ok":"warn"}">${Math.round(d.completeness*100)}% complete</span>
+      <span class="muted">engine ${esc(d.engine)}</span></div>
+      <table>${d.fields.map(f => `<tr><td class="small muted" style="width:40%">${esc(f.label)}</td>
+        <td>${f.value ? esc(f.value) : "<span class='pill warn'>missing</span>"}<div class="small muted">${esc(f.source)} · ${f.evidence.length} evidence link(s)</div></td></tr>`).join("")}</table>`; });
+  $("#aud").onclick = guard(async () => {
+    const rows = await api(`/cases/${id}/audit`);
+    $("#audit").innerHTML = `<table style="margin-top:12px"><tr><th>#</th><th>When</th><th>Who</th><th>What</th><th>Hash</th></tr>
+      ${rows.map(r => `<tr><td>${r.seq}</td><td class="small">${when(r.ts)}</td><td>${esc(r.actor)} <span class="small muted">${esc(r.actor_kind)}</span></td>
+        <td>${esc(r.action)}</td><td class="chain">${esc(r.entry_hash.slice(0,16))}…</td></tr>`).join("")}</table>`; });
+  $("#pdf").onclick = guard(async () => {
+    const w = window.open("", "_blank");
+    if (!w) throw new Error("Allow pop-ups for this page to export the PDF");
+    w.document.write("<p style='font:14px sans-serif'>Preparing audit pack…</p>");
+    const pack = await api(`/cases/${id}/export`);
+    w.document.open(); w.document.write(packHtml(pack, me().user)); w.document.close();
+    w.onload = () => setTimeout(() => w.print(), 300); });
+  $("#exp").onclick = guard(async () => {
+    const pack = await api(`/cases/${id}/export`);
+    const url = URL.createObjectURL(new Blob([JSON.stringify(pack, null, 2)], {type:"application/json"}));
+    const link = document.createElement("a"); link.href = url; link.download = `vartija-audit-pack-${id}.json`; link.click();
+    URL.revokeObjectURL(url); });
+}
+
+function packHtml(p, by){
+  const c = p.case, a = c.latest_assessment, ch = p.chain, ok = ch.ok;
+  const t = iso => iso ? new Date(iso).toLocaleString() : "–";
+  const rows = (arr, f) => arr.map(f).join("");
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Audit pack ${esc(c.id)}</title><style>
+  @page{size:A4;margin:16mm 14mm}*{box-sizing:border-box}
+  body{font:11pt/1.45 system-ui,"Segoe UI",Arial,sans-serif;color:#1f1e1b;margin:0}
+  h1{font-size:18pt;margin:0 0 2pt}h2{font-size:12.5pt;margin:16pt 0 6pt;padding-bottom:3pt;border-bottom:1px solid #ccc}
+  .muted{color:#666}.small{font-size:9pt}table{width:100%;border-collapse:collapse;font-size:9.5pt}
+  th,td{text-align:left;padding:4pt 5pt;border-bottom:1px solid #e3e1d9;vertical-align:top}th{color:#666;font-weight:600}
+  tr{page-break-inside:avoid}.box{border:1px solid #ccc;border-radius:6pt;padding:8pt 10pt;margin:8pt 0}
+  .ok{border-color:#2e7d32;background:#eef7ee}.bad{border-color:#c62828;background:#fdeeee}
+  .mono{font-family:Consolas,ui-monospace,monospace;font-size:8.5pt;word-break:break-all}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:4pt 16pt}.tag{display:inline-block;border:1px solid #ccc;border-radius:8pt;padding:0 6pt;margin:0 3pt 3pt 0;font-size:9pt}
+  .no-print{margin:10pt 0}@media print{.no-print{display:none}}</style></head><body>
+  <div class="no-print"><button onclick="print()">Save as PDF</button> <span class="muted small">In the print dialog choose "Save as PDF".</span></div>
+  <h1>Audit pack</h1>
+  <div class="muted">${esc(c.title)}</div>
+  <div class="small muted">Case ${esc(c.id)} · generated ${t(p.generated_at)} by ${esc(by)}</div>
+
+  <div class="box ${ok ? "ok" : "bad"}"><b>${ok ? "Record intact" : "Record has been altered"}</b> ·
+    ${ch.entries} entries in the tamper-evident log${ok ? "" : ` · first broken entry ${esc(ch.first_broken_seq)}: ${esc(ch.reason || "")}`}
+    <div class="small">Chain head (keep a copy outside the system to prove nothing changed later):</div>
+    <div class="mono">${esc(ch.head_hash)}</div></div>
+
+  <h2>Summary</h2>
+  <div class="grid small">
+    <div><b>Status</b> ${esc(c.status)}</div><div><b>Sector</b> ${esc(c.sector)}</div>
+    <div><b>Asset</b> ${esc(c.asset_id || "–")}</div><div><b>Detected</b> ${t(c.detected_at)}</div>
+    <div><b>Owner</b> ${esc(c.grc?.owner?.name || c.grc?.owner || "–")}</div>
+    <div><b>Duties confirmed by a person</b> ${Object.entries(c.flags || {}).filter(([,v]) => v).map(([k]) => esc(k.replace(/_/g," "))).join(", ") || "none"}</div>
+  </div>
+
+  <h2>Legal deadlines</h2>
+  <table><tr><th>Regime</th><th>Authority</th><th>Stage</th><th>Due</th><th>Status</th></tr>
+  ${rows(p.clock.regimes, r => rows(r.stages, s => `<tr><td>${esc(r.name)}</td><td>${esc(r.authority)}</td><td>${esc(s.label)}</td>
+    <td>${t(s.due_at)}</td><td>${esc(s.completed_at ? "done " + t(s.completed_at) : s.status.replace("_"," "))}</td></tr>`))}</table>
+
+  <h2>What happened</h2>
+  <table><tr><th>When</th><th>Type</th><th>Severity</th><th>Summary</th><th>Evidence</th></tr>
+  ${rows(c.events, e => `<tr><td>${t(e.occurred_at)}</td><td>${esc(e.type)}</td><td>${esc(e.severity)} (${Math.round(e.confidence*100)}%)</td>
+    <td>${esc(e.summary)}</td><td class="mono">${esc((e.evidence_refs||[]).join(" "))}</td></tr>`)}</table>
+
+  ${a ? `<h2>AI assessment (advisory)</h2>
+  <div class="small">${Object.entries(a.flags).map(([k,v]) => `<span class="tag">${esc(k.replace(/_/g," "))}: ${v?"yes":"no"}</span>`).join("")}
+    <span class="tag">confidence ${Math.round(a.confidence*100)}%</span>${a.needs_human_review ? `<span class="tag">human review required</span>` : ""}</div>
+  <p>${esc(a.rationale)}</p>
+  <div class="small"><b>Sources cited:</b> ${a.citations.map(esc).join(", ") || "none"}
+    ${a.rejected_citations.length ? `<br><b>Citations rejected by the system:</b> ${a.rejected_citations.map(esc).join(", ")}` : ""}</div>
+  ${a.conflicts.length ? `<div class="small" style="margin-top:6pt"><b>Conflicts flagged for a person to decide:</b><ul>${a.conflicts.map(k =>
+     `<li>${esc(k.title || k.id)}${k.suggestion ? " – " + esc(k.suggestion) : ""}</li>`).join("")}</ul></div>` : ""}
+  <div class="small muted">Engine ${esc(a.engine)}, prompt ${esc(a.prompt_version)}, ${t(a.created_at)}</div>` : ""}
+
+  ${p.reports.length ? `<h2>Reports drafted</h2>${p.reports.map(d => `<div class="box"><b>${esc(d.regime)} · ${esc(d.stage)}</b>
+    <span class="muted small">${Math.round(d.completeness*100)}% complete · ${t(d.created_at)}</span>
+    <table>${d.fields.map(f => `<tr><td style="width:38%">${esc(f.label)}</td><td>${f.value ? esc(f.value) : "<i>missing</i>"}
+      <div class="muted small">${esc(f.source)} · ${f.evidence.length} evidence link(s)</div></td></tr>`).join("")}</table></div>`).join("")}` : ""}
+
+  <h2>Audit trail</h2>
+  <table><tr><th>#</th><th>When</th><th>Who</th><th>What</th><th>Entry hash</th></tr>
+  ${rows(p.audit_trail, r => `<tr><td>${r.seq}</td><td>${t(r.ts)}</td><td>${esc(r.actor)} <span class="muted">(${esc(r.actor_kind)})</span></td>
+    <td>${esc(r.action)}</td><td class="mono">${esc(r.entry_hash.slice(0,24))}…</td></tr>`)}</table>
+  <p class="small muted">Each entry's hash includes the previous entry's hash, so changing or deleting any row breaks every hash after it.
+  AI output in this pack is decision support; duties and approvals above were confirmed by the named people.</p>
+  </body></html>`;
+}
+
+async function loadSources(){
+  const d = await api("/sources");
+  const up = d.uploaded.map(u => `<div style="padding:6px 0;border-top:1px solid var(--line)">
+      <div class="row" style="justify-content:space-between"><b style="word-break:break-all">${esc(u.name)}</b>
+        <button class="danger small" data-del="${esc(u.name)}" aria-label="Remove ${esc(u.name)}">Remove</button></div>
+      <div class="muted">${u.kind === "document" ? `${u.paragraphs} paragraphs · cite as <code>${esc(u.prefix)}:…</code>` : "data file · kept as evidence"}
+        · ${Math.max(1, Math.round(u.bytes/1024))} KB · by ${esc(u.uploaded_by)}</div>
+      <div class="muted chain">sha256 ${esc(u.sha256.slice(0,16))}…</div></div>`).join("");
+  $("#srclist").innerHTML = `<div class="muted" style="margin-bottom:4px">${d.corpus_chunks} citable paragraphs in total</div>` +
+    (up || `<div class="muted">No uploads yet.</div>`) +
+    `<details style="margin-top:6px"><summary class="muted">Built-in sources (${d.builtin.length})</summary>${d.builtin.map(b =>
+      `<div class="muted">${esc(b.name)} · ${b.paragraphs}</div>`).join("")}</details>`;
+  document.querySelectorAll("[data-del]").forEach(b => b.onclick = guard(async () => {
+    await api(`/sources/${encodeURIComponent(b.dataset.del)}`, {method:"DELETE"}); toast("Removed"); loadSources(); loadHealth(); }));
+}
+$("#srcup").onclick = guard(async () => {
+  const files = [...$("#srcfile").files];
+  if (!files.length) { $("#srcmsg").innerHTML = `<span style="color:var(--bad)">Choose a file first.</span>`; return; }
+  const msgs = [];
+  for (const f of files) {
+    const fd = new FormData(); fd.append("file", f);
+    if (files.length === 1 && $("#srcprefix").value.trim()) fd.append("prefix", $("#srcprefix").value.trim());
+    if ($("#srchead").value.trim()) fd.append("heading", $("#srchead").value.trim());
+    $("#srcmsg").textContent = `Uploading ${f.name}…`;
+    const r = await fetch("/sources", {method:"POST", headers: headers(), body: fd});
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { msgs.push(`<div style="color:var(--bad)">${esc(f.name)}: ${esc(typeof d.detail === "string" ? d.detail : "upload failed")}</div>`); continue; }
+    msgs.push(d.kind === "document"
+      ? `<div style="color:var(--ok)">${esc(f.name)}: ${d.paragraphs} paragraphs added (${d.numbered} numbered)${d.duplicates.length ? ` · <span style="color:var(--warn)">${d.duplicates.length} duplicate numbers, check the heading pattern</span>` : ""}</div>`
+      : `<div style="color:var(--ok)">${esc(f.name)}: stored as evidence</div>`);
+  }
+  $("#srcmsg").innerHTML = msgs.join(""); $("#srcfile").value = "";
+  await loadSources(); await loadHealth();
+});
+
+function tick(){
+  document.querySelectorAll("[data-due]").forEach(el => {
+    if (!el.dataset.due || el.dataset.done === "1") return;
+    el.textContent = fmt((new Date(el.dataset.due) - Date.now()) / 1000);
+  });
+}
+setInterval(tick, 1000);
+setInterval(() => { if (selected) api(`/cases/${selected}/clock`).then(c => clockData = c).catch(()=>{}) }, 15000);
+
+$("#seed").onclick = guard(async () => { const r = await api("/demo/seed", {method:"POST"}); toast("Demo incident created"); await loadCases(); openCase(r.case_id); });
+$("#verify").onclick = guard(async () => {
+  const v = await api("/audit/verify");
+  $("#chain").className = "small"; $("#chain").innerHTML = `<span class="pill ${v.ok?"ok":"bad"}">${v.ok?"intact":"BROKEN"}</span>
+    ${v.entries ?? ""} entries${v.ok ? "" : ` · first broken entry ${esc(v.first_broken_seq)}: ${esc(v.reason||"")}`}
+    ${v.head_hash ? `<div class="chain muted" style="margin-top:4px">head ${esc(v.head_hash)}</div>` : ""}`; });
+
+async function start(){
+  await loadHealth();
+  try { views = (await api("/me")).views } catch(e){ views = []; toast(e.message, true) }
+  const can = {exec: views.includes("executive"), eng: views.includes("engineer")};
+  if (!can[view]) view = can.exec ? "exec" : "eng";
+  $("#views").style.display = can.exec && can.eng ? "" : "none";
+  await show();
+}
+async function show(){
+  const can = {exec: views.includes("executive"), eng: views.includes("engineer")};
+  document.querySelectorAll("#views button").forEach(b => b.classList.toggle("on", b.dataset.view === view));
+  $("#noaccess").style.display = !can.exec && !can.eng ? "" : "none";
+  $("#exec").style.display = can[view] && view === "exec" ? "" : "none";
+  $("#eng").style.display = can[view] && view === "eng" ? "" : "none";
+  if (view === "exec" && can.exec) await loadExec();
+  if (view === "eng" && can.eng) { await loadCases(); loadSources().catch(e => toast(e.message, true)); if (selected) await openCase(selected); }
+}
+
+const money = (v, cur) => new Intl.NumberFormat(undefined, {style:"currency", currency:cur||"EUR", maximumFractionDigits:0}).format(v);
+function savings(v){
+  let minutes = 0;
+  for (const [k, n] of Object.entries(v.counts)) minutes += n * (+(document.getElementById("m_"+k)?.value ?? v.minutes_saved[k] ?? 0));
+  const hourly = +(document.getElementById("m_rate")?.value ?? v.hourly_cost);
+  return {hours: Math.round(minutes/60), cost: Math.round(minutes/60*hourly)};
+}
+async function loadExec(){
+  summary = await api("/exec/summary"); const s = summary, v = s.value, sv = savings(v);
+  const LBL = {"case.opened":"Triage of a new issue", "assessment.created":"Checking which rules apply",
+               "report.drafted":"Drafting a report", "export":"Building an audit pack"};
+  $("#exec").innerHTML = `
+  <div class="banner ${s.level}"><span class="dot" aria-hidden="true"></span>
+    <div><div class="h">${esc(s.headline)}</div><div class="s">${esc(s.subline)}</div></div></div>
+  <div class="kpis">
+    <div class="kpi"><div class="l">Legal deadlines on track</div><div class="v">${s.deadlines.on_track} of ${s.deadlines.open}</div>
+      <div class="n">${s.deadlines.open - s.deadlines.on_track ? (s.deadlines.open - s.deadlines.on_track) + " missed" : "none missed"}</div></div>
+    <div class="kpi"><div class="l">Could cost us</div><div class="v" style="color:${s.risk_count?"var(--warn)":"var(--ok)"}">${s.risk_count} item${s.risk_count===1?"":"s"}</div>
+      <div class="n">${s.risk_count ? "listed below with what to do" : "nothing at risk"}</div></div>
+    <div class="kpi"><div class="l">Time saved so far</div><div class="v" id="k_h" style="color:var(--ok)">${sv.hours} h</div>
+      <div class="n" id="k_c">about ${money(sv.cost, v.currency)}, based on the assumptions below</div></div>
+    <div class="kpi"><div class="l">Waiting on you</div><div class="v">${s.waiting_on_you.length} decision${s.waiting_on_you.length===1?"":"s"}</div>
+      <div class="n">${s.waiting_on_you.length ? "approve or reject below" : "nothing to sign"}</div></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><h2>What could cost us</h2>
+      ${s.risks.length ? s.risks.map(r => `<div class="risk"><span class="b ${r.level}" aria-hidden="true"></span>
+        <div><div>${esc(r.text)}</div><div class="small muted">${esc(r.detail)}</div></div></div>`).join("")
+        : `<div class="muted">Nothing at risk right now.</div>`}</div>
+    <div class="card"><h2>Waiting on you</h2>
+      ${s.waiting_on_you.length ? s.waiting_on_you.map(w => `<div class="risk"><div style="flex:1">
+        <div>${esc(w.what)}</div><div class="small muted">${esc(w.case)}${w.approved_by.length ? " · already approved by " + esc(w.approved_by.join(", ")) : ""}</div>
+        <div class="row" style="margin-top:6px"><button class="primary" data-xd="approve" data-id="${esc(w.id)}" data-role="${esc(w.your_role)}">Approve</button>
+        <button class="danger" data-xd="reject" data-id="${esc(w.id)}" data-role="${esc(w.your_role)}">Reject</button>
+        <span class="small muted">as ${esc(w.your_role)}</span></div></div></div>`).join("")
+        : `<div class="muted">No decisions need you.</div>`}</div>
+  </div>
+  <div class="card"><h2>How "time saved" is worked out</h2>
+    <div class="small muted" style="margin-bottom:10px">Steps the tool did for the team, times how long each takes by hand. Change these to your own numbers.</div>
+    <div class="assume">
+      <div><label for="m_rate">Cost per engineer hour (${esc(v.currency)})</label><input id="m_rate" type="number" min="0" step="5" value="${assumeVals.m_rate ?? v.hourly_cost}"></div>
+      ${Object.keys(v.counts).map(k => `<div><label for="m_${esc(k)}">${esc(LBL[k]||k)}: ${v.counts[k]} done, minutes each by hand</label>
+        <input id="m_${esc(k)}" type="number" min="0" step="5" value="${assumeVals["m_"+k] ?? v.minutes_saved[k] ?? 0}"></div>`).join("")}
+    </div></div>
+  <div class="row small" style="justify-content:center;color:var(--muted);margin-top:6px">
+    <span class="pill ${s.proof.chain_ok?"ok":"bad"}">${s.proof.chain_ok?"Record intact":"Record tampered"}</span>
+    Every decision is traced to a rule and a named person (${s.proof.entries} recorded steps). Audit pack ready on request.</div>`;
+  document.querySelectorAll("#exec .assume input").forEach(i => i.oninput = () => {
+    assumeVals[i.id] = i.value; const x = savings(v); $("#k_h").textContent = x.hours + " h";
+    $("#k_c").textContent = `about ${money(x.cost, v.currency)}, based on the assumptions below`; });
+  document.querySelectorAll("[data-xd]").forEach(b => b.onclick = guard(async () => {
+    await api(`/actions/${b.dataset.id}/decide`, {method:"POST", body:{decision:b.dataset.xd, role:b.dataset.role}});
+    toast(b.dataset.xd === "approve" ? "Approved" : "Rejected"); loadExec(); }));
+}
+setInterval(() => { if (view === "exec" && views.includes("executive")) loadExec().catch(()=>{}) }, 30000);
+
+guard(start)();
+</script>
+</body>
+</html>

@@ -6,3 +6,6 @@ __pycache__/
 build/
 .env
 node_modules/
+
+# dashboard uploads (challenge material is confidential)
+data/

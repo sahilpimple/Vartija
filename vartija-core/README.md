@@ -27,7 +27,7 @@ CyberGRC-AI ◀──asset/risk/control context┤
 
 ```bash
 pip install -e ".[dev]"
-python -m pytest -q             # 18 tests: flow, tampering, policy, AI guardrails
+python -m pytest -q             # 59 tests: flow, tampering, policy, AI guardrails, ingestion, retrieval, checks, dashboard, JWT, access, uploads
 python scripts/demo.py          # narrated stage demo (telecom story)
 python scripts/demo.py --story plc   # CRA story (set nothing else; it switches sector itself)
 python scripts/eval.py          # scenario evaluation: precision/recall per flag
@@ -151,6 +151,92 @@ Or run it as a separate container: `docker-compose.vartija.yml`.
 | Editing or deleting any audit row is detected | `test_tampering_is_detected` |
 | Conflicts are surfaced, not resolved | `test_conflicts_surface` |
 
+## Document ingestion, retrieval and deterministic checks (added 2026-11-05, pre-event)
+
+Generic building blocks for any rule book, standard, law or SOP. Nothing here is domain-specific.
+
+```bash
+pip install -e ".[dev,docs]"                                   # docs = pypdf for PDF input
+python scripts/ingest_docs.py rules.pdf --prefix src --tags src # -> corpus/src.md + src.refs.json
+python scripts/pack_to_pdf.py vartija-audit-pack-<id>.json        # exported JSON pack -> PDF
+VARTIJA_RETRIEVER=hybrid uvicorn vartija_core.api:app --port 8001   # tfidf (default) | bm25 | hybrid
+```
+
+| Module | What it adds |
+| --- | --- |
+| `docingest.py` | `.pdf/.html/.md/.txt` → paragraphs that **keep the document's own numbering** (`src:9.2.1`, `src:23(4)`), parents, page-header stripping, duplicate-number warnings, cross-reference extraction. Heading patterns are regexes; add one per document style with `--heading`. |
+| `rag.py` | `code_tokenize` keeps identifiers like `A-60`, `II-2/9.2.3`, `62443-4-2` intact. `BM25Retriever` for exact terms. `HybridRetriever` fuses BM25 + TF-IDF + optional embeddings (`embed=` any function, e.g. Ollama or pgvector), and `expand=1` follows cross-references. `make_retriever` picks via `VARTIJA_RETRIEVER`. |
+| `citations.py` | `verify_citations`: the cited passage must exist, must have been retrieved, **and the quoted words must appear in it** (tolerant of PDF spacing/dashes, strict on changed numbers). Every rejection carries a reason for the UI. |
+| `quantities.py` | `check_requirement("not less than 60 min", "1 h")`: numeric requirement checks **in code, not in the model**, with unit conversion (length, time, mass, force, pressure, power, energy, flow, vibration, …) and a readable message. Returns `ok=None` when it can't decide. |
+
+Tests: `tests/test_upgrades.py` (21 tests). The model's job is to *extract* requirement and
+value text and to *cite with a quote*; these modules decide whether it was right.
+
+## Dashboard, auth and embeddings (added 2026-11-05, pre-event)
+
+```bash
+uvicorn vartija_core.api:app --reload --port 8001
+# open http://localhost:8001/dashboard
+```
+
+**Dashboard** (`vartija_core/static/dashboard.html`, one file, no build step): case list, live
+regulatory clock, AI assessment with citations, rejected citations and conflicts, "confirm
+duties" (humans only), action requests with approve/reject/execute, report draft with
+evidence counts, events, audit trail and whole-chain verification, JSON audit-pack export.
+The "Acting as" menu switches demo users so you can show that the AI can't approve and
+nobody approves their own request. **Load demo incident** calls `POST /demo/seed`.
+
+| Setting | Values | Default |
+| --- | --- | --- |
+| `VARTIJA_DEMO` | `auto` (on only while `VARTIJA_EVENT_SECRET` is the dev default), `1`, `0` | `auto` |
+| `VARTIJA_AUTH` | `headers` (demo X-User/X-Roles) or `jwt` (HS256 bearer token) | `headers` |
+| `VARTIJA_JWT_SECRET`, `VARTIJA_JWT_USER_CLAIM`, `VARTIJA_JWT_ROLES_CLAIM` | the secret CyberGRC-AI signs with; claim names | —, `sub`, `roles` |
+| `VARTIJA_EMBED`, `VARTIJA_EMBED_MODEL` | `none`, `ollama`, `openai`; e.g. `nomic-embed-text` | `none` |
+
+- **JWT** (`auth_jwt.py`): standard library only. Checks signature, `exp`, `nbf`. Roles are
+  lower-cased with spaces → `_` ("GRC Manager" → `grc_manager`); map them in `policy.yaml`.
+  A token with `"kind": "ai"` is an AI principal and can never approve or confirm duties.
+- **Embeddings** (`embeddings.py`): used by `VARTIJA_RETRIEVER=hybrid`. Probed at start-up;
+  if Ollama is down the API starts anyway and `/health` says why.
+- New route `GET /cases/{id}/actions` lists a case's action requests.
+
+Tests: `tests/test_dashboard_auth.py` (10 tests).
+
+### Two views with role-based access (`config/access.yaml`)
+
+| View | Who (default roles) | Shows |
+| --- | --- | --- |
+| **Executive** | `management`, `ceo`, `executive`, `board`, `admin` | One-line status (green/amber/red), four plain numbers (legal deadlines on track, items that could cost us, time saved, decisions waiting on you), risks in plain words, approve/reject buttons, "record intact" proof, and an editable "time saved" calculator |
+| **Engineer** | `ciso`, `soc_lead`, `legal`, `it_admin`, `engineer`, `analyst`, `grc_manager`, `risk_analyst`, `auditor`, `admin` | Everything above the hood: cases, clock, assessment, citations, actions, reports, audit trail |
+
+Enforced by the API: executive roles get **403** on case data, engineer roles get 403 on
+`/exec/summary`, AI agents never get the executive view. Approving is open to whoever the
+policy names, so a CEO signs off from the executive screen. `GET /me` returns the views a
+user may open; the dashboard shows only those (both, with a switch, for `admin`).
+"Time saved" = automated steps recorded in the audit log × minutes each takes by hand ×
+hourly cost; the defaults in `access.yaml` are placeholders, replace them with the
+customer's figures. Tests: `tests/test_access_exec.py`.
+
+## Adding challenge material from the dashboard (Sources panel)
+
+Engineer view → **Sources** → choose files → **Upload**. No restart needed.
+
+| File type | What happens |
+| --- | --- |
+| `.pdf .md .txt .html` (rules, standards, policies) | Split into paragraphs that keep the document's numbering, cross-references found, added to the searchable corpus at once. Cite as `<prefix>:<number>`, e.g. `ssr:9.2`. |
+| `.csv .xlsx .json .yaml .zip .docx .pptx .xml .png .jpg .dxf .ifc .step` (data packs) | Stored unchanged with a SHA-256 fingerprint as evidence. Not parsed or executed. |
+
+- Stored under `VARTIJA_UPLOAD_DIR` (default `./data`), which is **git-ignored**: challenge material
+  is usually confidential (Since AI ToS 5.8). Uploads survive restarts. Size limit `VARTIJA_MAX_UPLOAD_MB` (50).
+- Each upload and removal is written to the audit chain (who, file, fingerprint).
+- Only people in the engineer view can add or remove sources; AI agents and executive logins cannot.
+- If the upload says "duplicate numbers", the document's headings don't match the default patterns:
+  open **Options** and add a heading regex, e.g. `^Rule (?P<num>\d+(?:\.\d+)*)\s+(?P<title>.*)$`.
+- Scanned PDFs have no text layer; run OCR first.
+
+API: `GET /sources`, `POST /sources` (multipart `file`, optional `prefix`, `heading`), `DELETE /sources/{name}`.
+Tests: `tests/test_sources.py`.
+
 ## Re-skin drill (practise this twice before the event; target under 2 hours)
 
 1. Copy the closest `config/sectors/*.yaml`, rename, set org, markets, regimes, hints. Set `VARTIJA_SECTOR`.
@@ -183,5 +269,5 @@ Or run it as a separate container: `docker-compose.vartija.yml`.
   portals are web forms. A human files and Vartija proves who approved what, when.
 - The hash chain proves tampering, it does not prevent it. Anchor the chain head (from
   `/audit/verify`) outside the database for real use.
-- Retrieval is TF-IDF; switch to pgvector embeddings if the corpus grows or needs semantic match.
+- Retrieval defaults to TF-IDF; `VARTIJA_RETRIEVER=hybrid` adds BM25 and cross-reference expansion. Dense embeddings are pluggable (`embed=`) but none is bundled.
 - Redaction is regex-based: emails, phone numbers, Finnish personal ID codes, IBANs.

@@ -1,0 +1,31 @@
+# Role-based access to the two views. Enforced by the API, not only hidden in the UI.
+# A role can be in both lists (e.g. admin). Edit role names to match the company's
+# org chart / CyberGRC-AI roles (JWT roles are lower-cased, spaces become "_").
+views:
+  engineer: [ciso, soc_lead, legal, it_admin, engineer, analyst, grc_manager, risk_analyst, auditor, admin]
+  executive: [management, ceo, executive, board, admin]
+
+# Approving or rejecting an action request is open to anyone whose role the policy asks
+# for (policy.yaml), whatever their view, so an executive can sign off from their screen.
+
+# Assumptions for the "time saved" figure on the executive view. They are shown on screen
+# and can be changed there; replace them with the customer's own numbers before quoting.
+value:
+  currency: EUR
+  hourly_cost: 80
+  minutes_saved:            # per automated step, compared with doing it by hand
+    case.opened: 15         # triage and opening a case with linked evidence
+    assessment.created: 45  # reading the rules and deciding what applies
+    report.drafted: 90      # drafting a regulator / class report
+    export: 120             # assembling an audit pack
+
+# Plain-language names for actions, used on the executive view.
+action_names:
+  submit_report: Submit the report to the authority
+  notify_customers: Notify affected customers
+  contain_host: Isolate the affected system
+  block_ip_range: Block the attacker's network
+  rotate_credentials: Reset compromised passwords
+  open_corrective_action: Open a follow-up task
+  preserve_evidence: Preserve evidence
+  add_note: Add a note

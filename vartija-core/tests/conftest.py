@@ -26,7 +26,7 @@ AI = {"X-User": "triage-agent", "X-User-Kind": "ai", "X-Roles": "ciso,management
 def make_settings(tmp_path: Path, **overrides) -> Settings:
     base = dict(database_url=f"sqlite:///{tmp_path / 'test.db'}", event_secret=SECRET,
                 config_dir=ROOT / "config", corpus_dir=ROOT / "corpus", seed_dir=ROOT / "seed",
-                sector="telecom", llm_backend="rules")
+                sector="telecom", llm_backend="rules", upload_dir=tmp_path / "data")
     base.update(overrides)
     return Settings(**base)
 

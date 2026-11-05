@@ -28,7 +28,7 @@ from vartija_core.config import load_config  # noqa: E402
 from vartija_core.grc import YamlGrcProvider  # noqa: E402
 from vartija_core.llm import make_llm  # noqa: E402
 from vartija_core.models import Case, Event  # noqa: E402
-from vartija_core.rag import Retriever, load_corpus  # noqa: E402
+from vartija_core.rag import load_corpus, make_retriever  # noqa: E402
 from vartija_core.settings import get_settings  # noqa: E402
 
 
@@ -53,7 +53,7 @@ def main() -> int:
 
     settings = get_settings()
     config = load_config(settings.config_dir)
-    assessor = Assessor(config, Retriever(load_corpus(settings.corpus_dir)), make_llm(settings),
+    assessor = Assessor(config, make_retriever(load_corpus(settings.corpus_dir)), make_llm(settings),
                         settings.config_dir / "prompts")
     grc = YamlGrcProvider(settings.seed_dir / "grc.yaml")
     scenarios = yaml.safe_load(Path(args.scenarios).read_text(encoding="utf-8"))["scenarios"]
