@@ -11,6 +11,14 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+_PKG = Path(__file__).resolve().parent
+# Running from a source checkout (editable install): data folders sit next to the package.
+# Installed normally (pip install git+https://... or a wheel): they are bundled inside it.
+_SOURCE_TREE = (ROOT / "config" / "policy.yaml").exists()
+
+
+def _data_dir(name: str) -> Path:
+    return ROOT / name if _SOURCE_TREE else _PKG / f"bundled_{name}"
 
 
 @dataclass(frozen=True)
@@ -20,11 +28,13 @@ class Settings:
     event_secret: str = field(default_factory=lambda: os.getenv("VARTIJA_EVENT_SECRET", "dev-only-change-me"))
     # Reject signed events whose timestamp is further than this from now (replay protection).
     max_clock_skew_seconds: int = field(default_factory=lambda: int(os.getenv("VARTIJA_MAX_SKEW", "300")))
-    config_dir: Path = field(default_factory=lambda: Path(os.getenv("VARTIJA_CONFIG_DIR", ROOT / "config")))
-    corpus_dir: Path = field(default_factory=lambda: Path(os.getenv("VARTIJA_CORPUS_DIR", ROOT / "corpus")))
-    seed_dir: Path = field(default_factory=lambda: Path(os.getenv("VARTIJA_SEED_DIR", ROOT / "seed")))
+    config_dir: Path = field(default_factory=lambda: Path(os.getenv("VARTIJA_CONFIG_DIR", _data_dir("config"))))
+    corpus_dir: Path = field(default_factory=lambda: Path(os.getenv("VARTIJA_CORPUS_DIR", _data_dir("corpus"))))
+    seed_dir: Path = field(default_factory=lambda: Path(os.getenv("VARTIJA_SEED_DIR", _data_dir("seed"))))
     # Files uploaded from the dashboard (challenge rules, data packs). Kept out of git on purpose.
-    upload_dir: Path = field(default_factory=lambda: Path(os.getenv("VARTIJA_UPLOAD_DIR", ROOT / "data")))
+    # never write into an installed package: outside a source checkout, uploads go to ./data
+    upload_dir: Path = field(default_factory=lambda: Path(os.getenv("VARTIJA_UPLOAD_DIR",
+                                                                     ROOT / "data" if _SOURCE_TREE else Path.cwd() / "data")))
     max_upload_mb: int = field(default_factory=lambda: int(os.getenv("VARTIJA_MAX_UPLOAD_MB", "50")))
     # Which sector overlay is active: telecom, energy, maritime, industrial ... (see config/sectors)
     sector: str = field(default_factory=lambda: os.getenv("VARTIJA_SECTOR", "telecom"))

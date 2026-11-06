@@ -1,6 +1,6 @@
 [project]
 name = "vartija-core"
-version = "0.1.0"
+version = "0.2.0"
 description = "Reusable regulatory-incident core: signed event intake, regulatory clock, approval gate, hash-chained audit log, cited AI assessment."
 requires-python = ">=3.10"
 dependencies = [
@@ -25,7 +25,18 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-packages = ["vartija_core"]
+# config/, corpus/ and seed/ live next to the package in the repo; they are installed inside it
+# (vartija_core/bundled_*) so a normal `pip install git+https://...` works, not only editable installs.
+packages = ["vartija_core", "vartija_core.bundled_config", "vartija_core.bundled_corpus", "vartija_core.bundled_seed"]
+
+[tool.setuptools.package-dir]
+"vartija_core" = "vartija_core"
+"vartija_core.bundled_config" = "config"
+"vartija_core.bundled_corpus" = "corpus"
+"vartija_core.bundled_seed" = "seed"
 
 [tool.setuptools.package-data]
 vartija_core = ["static/*.html"]
+"vartija_core.bundled_config" = ["*.yaml", "regimes/*.yaml", "sectors/*.yaml", "prompts/*.md"]
+"vartija_core.bundled_corpus" = ["*.md", "*.json"]
+"vartija_core.bundled_seed" = ["*.yaml"]

@@ -23,6 +23,16 @@ CyberGRC-AI ◀──asset/risk/control context┤
                     hash-chained audit log + export pack
 ```
 
+## Installing as a dependency
+
+```bash
+pip install "vartija-core @ git+https://github.com/sahilpimple/Vartija.git@v0.2.0#subdirectory=vartija-core"
+```
+Since v0.2.0 `config/`, `corpus/` and `seed/` are bundled inside the installed package, so a normal
+(non-editable) install works. In a source checkout (editable install) the folders next to the package
+are used, so edits to them take effect immediately. Override any of them with `VARTIJA_CONFIG_DIR`,
+`VARTIJA_CORPUS_DIR`, `VARTIJA_SEED_DIR`. Outside a source checkout, uploads go to `./data`.
+
 ## Quick start (2 minutes)
 
 ```bash
